@@ -1,52 +1,38 @@
 package logic
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 
 	"janrobas/spaceship/constants"
-	"janrobas/spaceship/fonts"
 	graphics "janrobas/spaceship/graphics"
 	"janrobas/spaceship/models"
 
-	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
-	"golang.org/x/image/font"
-)
-
-var (
-	arcadeFont    font.Face
-	emptyImage, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	hexRoad, _    = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	hexRoadFar, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	hexSpace, _   = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	hexDanger, _  = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	hexFuel, _    = ebiten.NewImage(16, 16, ebiten.FilterDefault)
 )
 
 func initialize(state *models.GameState) {
-	tt, _ := truetype.Parse(fonts.ArcadeN_ttf)
+	state.GameImages = models.GameImages{}
 
-	const (
-		arcadeFontSize = 8
-		dpi            = 72
-	)
+	state.GameImages.HexDanger, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+	state.GameImages.HexRoad, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+	state.GameImages.HexRoadFar, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+	state.GameImages.HexSpace, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+	state.GameImages.HexFuel, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+	state.GameImages.EmptyImage, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
 
-	arcadeFont = truetype.NewFace(tt, &truetype.Options{
-		Size:    arcadeFontSize,
-		DPI:     dpi,
-		Hinting: font.HintingFull,
-	})
-
-	hexRoad.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 200})
-	hexRoadFar.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 150})
-	hexSpace.Fill(color.RGBA{R: 8, B: 10, G: 10, A: 255})
-	hexDanger.Fill(color.RGBA{B: 23, G: 23, R: 200, A: 200})
-	hexFuel.Fill(color.RGBA{B: 200, G: 50, R: 200, A: 200})
-	emptyImage.Fill(color.RGBA{B: 200, G: 200, R: 200, A: 200})
+	state.GameImages.HexRoad.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 200})
+	state.GameImages.HexRoadFar.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 150})
+	state.GameImages.HexSpace.Fill(color.RGBA{R: 8, B: 10, G: 10, A: 255})
+	state.GameImages.HexDanger.Fill(color.RGBA{B: 23, G: 23, R: 200, A: 200})
+	state.GameImages.HexFuel.Fill(color.RGBA{B: 200, G: 50, R: 200, A: 200})
+	state.GameImages.EmptyImage.Fill(color.RGBA{B: 200, G: 200, R: 200, A: 200})
 
 	state.ShipX = constants.ScreenWidth / 2
 	state.ShipY = constants.ScreenHeight / 2
+
+	state.Fuel = 100
 }
 
 func shipIsClose(state *models.GameState, x float32, y float32, dist float64) bool {
@@ -54,32 +40,28 @@ func shipIsClose(state *models.GameState, x float32, y float32, dist float64) bo
 		math.Abs(float64(y)-float64(state.ShipY)) < dist/1.5
 }
 
-func drawHex(screen *ebiten.Image, state *models.GameState, w float32, h float32, x float32, y float32, logicalX int, logicalY int) {
-	isOnMap := logicalX/4 >= 0 && logicalY/4 >= 0 &&
-		len(state.Map) > logicalX/4 &&
-		len(state.Map[logicalX/4]) > logicalY/4
+func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, w float32, h float32, x float32, y float32, logicalX int, logicalY int) bool {
+	isOnMap := logicalX >= 0 && logicalY >= 0 &&
+		len(state.Map) > logicalX &&
+		len(state.Map[logicalX]) > logicalY
 
 	var img *ebiten.Image
 
-	if isOnMap && state.Map[logicalX/4][logicalY/4] == 'X' && logicalX%4 == 2 && logicalY%4 == 2 {
-		img = hexFuel
-		if shipIsClose(state, x, y, constants.HexSize/1.5) {
-			state.Map[logicalX/4][logicalY/4] = '0'
-		}
-	} else if isOnMap && state.Map[logicalX/4][logicalY/4] == '1' {
-		if shipIsClose(state, x, y, constants.HexSize*5) {
-			img = hexRoad
-		} else {
-			img = hexRoadFar
-		}
-	} else if shipIsClose(state, x, y, constants.HexSize/1.5) {
-		// ship here
-		img = hexDanger
+	shipIsOnThisHex := shipIsClose(state, x, y, constants.HexSize)
+
+	if isOnMap && state.Map[logicalX][logicalY] == 'X' {
+		img = state.GameImages.HexFuel
+	} else if isOnMap && state.Map[logicalX][logicalY] == '1' {
+		img = state.GameImages.HexRoad
+	} else if shipIsOnThisHex {
+		img = state.GameImages.HexDanger
 	} else {
-		img = hexSpace
+		img = state.GameImages.HexSpace
 	}
 
 	graphics.DrawHex(screen, w, h, x, y, logicalX, logicalY, img)
+
+	return shipIsOnThisHex && isOnMap
 }
 
 func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
@@ -87,6 +69,7 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 		return nil
 	}
 
+	currentCollisions := make([]models.IntCoordinates, 0)
 	for i := 0; i < 20; i++ {
 		for j := 0; j < 20; j++ {
 
@@ -95,25 +78,33 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 				offset = offset - constants.HexSize + 24
 			}
 
-			drawHex(screen, state, constants.HexSize, constants.HexSize,
+			logicalX := i + state.IndexXOffset
+			logicalY := 20 - j + state.IndexYOffset
+
+			isCollision := drawHexAndReturnIfCollision(screen, state, constants.HexSize, constants.HexSize,
 				float32(+offset+i*(constants.HexSize+4))+state.MoveXOffset,
 				float32(-(2*constants.HexSize)+j*(constants.HexSize-9))+state.MoveYOffset,
-				20-j+state.IndexYOffset, i+state.IndexXOffset)
+				logicalX, logicalY)
 
+			if isCollision {
+				currentCollisions = append(currentCollisions, models.IntCoordinates{X: logicalX, Y: logicalY})
+			}
 		}
 	}
 
-	graphics.DrawShip(screen, 30, 40, state.ShipX, state.ShipY, state.ShipRotation)
+	state.CurrentCollisions = currentCollisions
+
+	graphics.DrawShip(screen, 30, 40, state.ShipX, state.ShipY, state.ShipRotation, state.GameImages.EmptyImage)
 
 	return nil
 }
 
 func rotateShip(state *models.GameState) {
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		state.ShipRotation = state.ShipRotation + 0.03
+		state.ShipRotation = state.ShipRotation + 0.025
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		state.ShipRotation = state.ShipRotation - 0.03
+		state.ShipRotation = state.ShipRotation - 0.025
 	}
 
 	if state.ShipRotation > math.Pi*2 {
@@ -143,12 +134,27 @@ func moveTerrain(state *models.GameState) {
 	}
 }
 
+func updateFuel(state *models.GameState) {
+	for _, collision := range state.CurrentCollisions {
+		collisionChar := state.Map[collision.X][collision.Y]
+		if collisionChar == 'X' {
+			state.Map[collision.X][collision.Y] = '0'
+			fmt.Println(fmt.Sprintf("killed %d %d", collision.X, collision.Y))
+			fmt.Println(state.CurrentCollisions)
+		}
+
+	}
+
+	state.Fuel -= 0.01
+}
+
 func RunGame(state *models.GameState) *GameLoop {
 	initialize(state)
 
-	gameLoop := PrepareGameLoop(func() {
+	gameLoop := PrepareGameLoop(func(delta int64) {
 		rotateShip(state)
 		moveTerrain(state)
+		updateFuel(state)
 	}, func() {
 	})
 
