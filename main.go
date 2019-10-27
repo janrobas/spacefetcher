@@ -37,10 +37,12 @@ func main() {
 		[]rune("1111111"),
 	}
 
-	logic.RunGame(gameState)
+	gs := logic.RunGame(gameState)
+	gs.Stop <- true
+
+	gs = logic.RunGame(gameState)
 
 	if err := ebiten.Run(update, constants.ScreenWidth, constants.ScreenHeight, 1, "Beng"); err != nil {
 		log.Fatal(err)
 	}
-
 }

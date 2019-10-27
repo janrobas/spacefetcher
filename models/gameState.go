@@ -8,4 +8,5 @@ type GameState struct {
 	ShipX        float32
 	ShipY        float32
 	Map          [][]rune
+	ShipRotation float32
 }
