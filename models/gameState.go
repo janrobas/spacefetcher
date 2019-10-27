@@ -18,6 +18,8 @@ type GameState struct {
 	GameImages        GameImages
 	Countdown         int
 	ItemsLeft         int
+	CurrentMapIndex   int
+	Maps              [][][]rune
 }
 
 type IntCoordinates struct {

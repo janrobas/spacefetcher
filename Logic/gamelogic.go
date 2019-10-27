@@ -35,6 +35,12 @@ func initialize(state *models.GameState) {
 
 	state.ShipX = constants.ScreenWidth / 2
 	state.ShipY = constants.ScreenHeight / 2
+	state.MoveXOffset = 0
+	state.MoveYOffset = 0
+	state.IndexXOffset = 0 // TODO
+	state.IndexYOffset = 0 // TODO
+
+	state.Map = state.Maps[state.CurrentMapIndex]
 
 	state.ItemsLeft = 0
 	for _, row := range state.Map {
@@ -105,6 +111,13 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 
 	state.CurrentCollisions = currentCollisions
 
+	if state.ItemsLeft == 0 && state.CurrentMapIndex == len(state.Maps)-1 {
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight/2,
+			"Congratulations!")
+		return nil
+	}
+
 	graphics.DrawShip(screen, 30, 40, state.ShipX, state.ShipY, state.ShipRotation, state.GameImages.EmptyImage)
 	graphics.DrawFuel(screen, constants.ScreenWidth, 20, float64(state.Fuel))
 
@@ -141,6 +154,7 @@ func rotateShip(state *models.GameState) {
 		state.ShipRotation = state.ShipRotation - 0.025
 	}
 	if ebiten.IsKeyPressed(ebiten.KeySpace) && state.ItemsLeft == 0 && state.Countdown == 0 {
+		state.CurrentMapIndex = state.CurrentMapIndex + 1
 		initialize(state)
 	}
 
@@ -191,15 +205,15 @@ func updateFuel(state *models.GameState) {
 func RunGame(state *models.GameState) *GameLoop {
 	initialize(state)
 
-	ts := time.Now().Second() + 1
+	ts := time.Now().Unix() + 1
 
 	gameLoop := PrepareGameLoop(func(delta int64) {
 		rotateShip(state)
 
 		if state.Countdown != 0 {
-			if time.Now().Second()-ts >= 1 {
+			if time.Now().Unix()-ts >= 1 {
 				state.Countdown = state.Countdown - 1
-				ts = time.Now().Second()
+				ts = time.Now().Unix()
 			}
 			return
 		}

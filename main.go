@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"janrobas/spaceship/constants"
 	"janrobas/spaceship/logic"
 	"janrobas/spaceship/models"
@@ -65,10 +64,13 @@ func main() {
 
 	gameState = &models.GameState{}
 
-	gameState.Map = stringToGameMap("000000000\n001111100\n001000000\n001111100\n001X00000\n001111100")
+	lev1 := stringToGameMap("000000000\n001111100\n001000000\n001111100\n001X00000\n001111100")
+	lev2 := stringToGameMap("0000X0000\n001111100\n001000000\n001111100\n001X00X00\n001111100")
 
-	fmt.Println(gameState.Map)
-	//panic("nc")
+	gameState.Maps = make([][][]rune, 0)
+	gameState.Maps = append(gameState.Maps, lev1)
+	gameState.Maps = append(gameState.Maps, lev2)
+
 	gs := logic.RunGame(gameState)
 	gs.Stop <- true
 
