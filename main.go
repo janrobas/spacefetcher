@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image/color"
 	"janrobas/spaceship/constants"
 	"janrobas/spaceship/logic"
 	"janrobas/spaceship/models"
@@ -10,9 +11,7 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
-var gameState *models.GameState
-
-func update(screen *ebiten.Image, menuState *models.MenuState) error {
+func update(screen *ebiten.Image, menuState *models.MenuState, gameState *models.GameState) error {
 	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
@@ -66,7 +65,7 @@ func stringToGameMap(minimized string) [][]rune {
 func main() {
 	// init game state
 
-	gameState = &models.GameState{}
+	gameState := &models.GameState{}
 
 	lev1 := stringToGameMap("000000000\n001111100\n001000000\n001111100\n001X00000\n001111100")
 	lev2 := stringToGameMap("0000X0000\n001111100\n001000000\n001111100\n001X00X00\n001111100")
@@ -88,11 +87,18 @@ func main() {
 		logic.RunGame(gameState)
 	}()
 
+	screenProxy, _ := ebiten.NewImage(constants.ScreenWidth, constants.ScreenHeight, ebiten.FilterLinear)
+
 	trueUpdate := func(screen *ebiten.Image) error {
-		return update(screen, menuState)
+		screenProxy.Fill(color.Black)
+		result := update(screenProxy, menuState, gameState)
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(1.5, 1.5)
+		screen.DrawImage(screenProxy, op)
+		return result
 	}
 
-	if err := ebiten.Run(trueUpdate, constants.ScreenWidth, constants.ScreenHeight, 1, "Space Fetcher"); err != nil {
+	if err := ebiten.Run(trueUpdate, constants.ScreenWidth*1.5, constants.ScreenHeight*1.5, 1, "Space Fetcher"); err != nil {
 		log.Fatal(err)
 	}
 }
