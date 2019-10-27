@@ -12,14 +12,18 @@ import (
 
 var gameState *models.GameState
 
-func update(screen *ebiten.Image) error {
+func update(screen *ebiten.Image, menuState *models.MenuState) error {
 	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
 
 	// different states
-	logic.UpdateGame(screen, gameState)
+	if menuState.StartGame {
+		logic.UpdateGame(screen, gameState)
+		return nil
+	}
 
+	logic.UpdateMenu(screen)
 	return nil
 }
 
@@ -66,17 +70,29 @@ func main() {
 
 	lev1 := stringToGameMap("000000000\n001111100\n001000000\n001111100\n001X00000\n001111100")
 	lev2 := stringToGameMap("0000X0000\n001111100\n001000000\n001111100\n001X00X00\n001111100")
+	lev3 := stringToGameMap("1000000\n0011100\n0011100\n0011100\n0X000X0\n1110000\n0011100\n0011100\n0011100\n0X01000\n0000000")
+	lev4 := stringToGameMap("000001111111XX0000\n000000000111000000\n000X01100010000000\n000001100010000011\n00000111111X000000\n000001100000000000\n000001111111110000")
 
 	gameState.Maps = make([][][]rune, 0)
 	gameState.Maps = append(gameState.Maps, lev1)
 	gameState.Maps = append(gameState.Maps, lev2)
+	gameState.Maps = append(gameState.Maps, lev3)
+	gameState.Maps = append(gameState.Maps, lev4)
 
-	gs := logic.RunGame(gameState)
-	gs.Stop <- true
+	menuState := &models.MenuState{}
+	menuState.StartGame = true
+	gs := logic.RunMenu(menuState)
 
-	gs = logic.RunGame(gameState)
+	go func() {
+		<-gs.Stop
+		logic.RunGame(gameState)
+	}()
 
-	if err := ebiten.Run(update, constants.ScreenWidth, constants.ScreenHeight, 1, "Beng"); err != nil {
+	trueUpdate := func(screen *ebiten.Image) error {
+		return update(screen, menuState)
+	}
+
+	if err := ebiten.Run(trueUpdate, constants.ScreenWidth, constants.ScreenHeight, 1, "Space Fetcher"); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -14,17 +14,22 @@ import (
 )
 
 func initialize(state *models.GameState) {
+	state.GameRunning = false
+
 	state.Countdown = 3
+	state.CountdownTs = time.Now().Unix() + 1
 	state.Fuel = 100
 
-	state.GameImages = models.GameImages{}
+	if state.GameImages == nil {
+		state.GameImages = &models.GameImages{}
 
-	state.GameImages.HexDanger, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	state.GameImages.HexRoad, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	state.GameImages.HexRoadFar, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	state.GameImages.HexSpace, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	state.GameImages.HexFuel, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	state.GameImages.EmptyImage, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+		state.GameImages.HexDanger, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+		state.GameImages.HexRoad, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+		state.GameImages.HexRoadFar, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+		state.GameImages.HexSpace, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+		state.GameImages.HexFuel, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+		state.GameImages.EmptyImage, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+	}
 
 	state.GameImages.HexRoad.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 200})
 	state.GameImages.HexRoadFar.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 150})
@@ -40,7 +45,13 @@ func initialize(state *models.GameState) {
 	state.IndexXOffset = 0 // TODO
 	state.IndexYOffset = 0 // TODO
 
-	state.Map = state.Maps[state.CurrentMapIndex]
+	state.Map = make([][]rune, len(state.Maps[state.CurrentMapIndex]))
+	for i, row := range state.Maps[state.CurrentMapIndex] {
+		state.Map[i] = make([]rune, len(row))
+		for j, val := range row {
+			state.Map[i][j] = val
+		}
+	}
 
 	state.ItemsLeft = 0
 	for _, row := range state.Map {
@@ -50,6 +61,8 @@ func initialize(state *models.GameState) {
 			}
 		}
 	}
+
+	state.GameRunning = true
 }
 
 func shipIsClose(state *models.GameState, x float32, y float32, dist float64) bool {
@@ -82,7 +95,7 @@ func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, 
 }
 
 func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
-	if ebiten.IsDrawingSkipped() {
+	if ebiten.IsDrawingSkipped() || !state.GameRunning {
 		return nil
 	}
 
@@ -124,13 +137,13 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 	if state.Countdown > 0 {
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2,
-			fmt.Sprintf("Starting in %d sec.", state.Countdown))
+			fmt.Sprintf("Position the ship. Starting in %d sec.", state.Countdown))
 	}
 
 	if state.Fuel <= 0 {
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2,
-			"NO FUEL.")
+			"NO FUEL. Press SPACE to restart.")
 	}
 
 	if state.ItemsLeft == 0 {
@@ -153,8 +166,12 @@ func rotateShip(state *models.GameState) {
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
 		state.ShipRotation = state.ShipRotation - 0.025
 	}
-	if ebiten.IsKeyPressed(ebiten.KeySpace) && state.ItemsLeft == 0 && state.Countdown == 0 {
-		state.CurrentMapIndex = state.CurrentMapIndex + 1
+
+	if ebiten.IsKeyPressed(ebiten.KeySpace) &&
+		(state.ItemsLeft == 0 && state.Countdown == 0 || state.Fuel <= 0) {
+		if state.ItemsLeft == 0 && state.Countdown == 0 {
+			state.CurrentMapIndex = state.CurrentMapIndex + 1
+		}
 		initialize(state)
 	}
 
@@ -186,6 +203,10 @@ func moveTerrain(state *models.GameState) {
 }
 
 func updateFuel(state *models.GameState) {
+	if len(state.CurrentCollisions) == 0 {
+		state.Fuel -= 0.09
+	}
+
 	for _, collision := range state.CurrentCollisions {
 		collisionChar := state.Map[collision.X][collision.Y]
 		if collisionChar == 'X' {
@@ -195,7 +216,7 @@ func updateFuel(state *models.GameState) {
 		}
 
 		if collisionChar == '0' {
-			state.Fuel -= 0.1
+			state.Fuel -= 0.09
 		}
 	}
 
@@ -205,15 +226,17 @@ func updateFuel(state *models.GameState) {
 func RunGame(state *models.GameState) *GameLoop {
 	initialize(state)
 
-	ts := time.Now().Unix() + 1
+	gameLoop := PrepareGameLoop(func(delta int64, gl *GameLoop) {
+		if !state.GameRunning {
+			return
+		}
 
-	gameLoop := PrepareGameLoop(func(delta int64) {
 		rotateShip(state)
 
 		if state.Countdown != 0 {
-			if time.Now().Unix()-ts >= 1 {
+			if time.Now().Unix()-state.CountdownTs >= 1 {
 				state.Countdown = state.Countdown - 1
-				ts = time.Now().Unix()
+				state.CountdownTs = time.Now().Unix()
 			}
 			return
 		}

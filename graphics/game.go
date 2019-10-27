@@ -4,33 +4,11 @@ import (
 	"image/color"
 	"math"
 
-	"janrobas/spaceship/fonts"
-
-	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/text"
-	"golang.org/x/image/font"
 )
 
-var (
-	arcadeFont font.Face
-)
-
-func init() {
-	tt, _ := truetype.Parse(fonts.ArcadeN_ttf)
-
-	const (
-		arcadeFontSize = 16
-		dpi            = 72
-	)
-
-	arcadeFont = truetype.NewFace(tt, &truetype.Options{
-		Size:    arcadeFontSize,
-		DPI:     dpi,
-		Hinting: font.HintingFull,
-	})
-}
 func makeShipVertex(x float32, y float32, w float32, h float32, ox float32, oy float32, rotation float32) ebiten.Vertex {
 
 	x = x - w/2

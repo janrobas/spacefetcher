@@ -5,12 +5,12 @@ import (
 )
 
 type GameLoop struct {
-	onUpdate func(int64)
+	onUpdate func(int64, *GameLoop)
 	onStop   func()
 	Stop     chan bool
 }
 
-func PrepareGameLoop(onUpdate func(int64), onStop func()) *GameLoop {
+func PrepareGameLoop(onUpdate func(int64, *GameLoop), onStop func()) *GameLoop {
 	return &GameLoop{
 		onUpdate: onUpdate,
 		onStop:   onStop,
@@ -28,7 +28,7 @@ func StartGameLoop(gameLoop *GameLoop) {
 		case <-ticker.C:
 			delta := int64(time.Now().UnixNano()/1000000 - tsStart)
 			tsStart = time.Now().UnixNano() / 1000000
-			gameLoop.onUpdate(delta)
+			gameLoop.onUpdate(delta, gameLoop)
 		case <-gameLoop.Stop:
 			gameLoop.onStop()
 			ticker.Stop()

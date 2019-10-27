@@ -15,11 +15,13 @@ type GameState struct {
 	CurrentCollisions []IntCoordinates
 	Fuel              float32
 	ShipRotation      float32
-	GameImages        GameImages
+	GameImages        *GameImages
 	Countdown         int
+	CountdownTs       int64
 	ItemsLeft         int
 	CurrentMapIndex   int
 	Maps              [][][]rune
+	GameRunning       bool
 }
 
 type IntCoordinates struct {
