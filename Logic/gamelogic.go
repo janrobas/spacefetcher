@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"math"
+	"time"
 
 	"janrobas/spaceship/constants"
 	graphics "janrobas/spaceship/graphics"
@@ -13,6 +14,9 @@ import (
 )
 
 func initialize(state *models.GameState) {
+	state.Countdown = 3
+	state.Fuel = 100
+
 	state.GameImages = models.GameImages{}
 
 	state.GameImages.HexDanger, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
@@ -32,7 +36,14 @@ func initialize(state *models.GameState) {
 	state.ShipX = constants.ScreenWidth / 2
 	state.ShipY = constants.ScreenHeight / 2
 
-	state.Fuel = 100
+	state.ItemsLeft = 0
+	for _, row := range state.Map {
+		for _, val := range row {
+			if val == 'X' {
+				state.ItemsLeft = state.ItemsLeft + 1
+			}
+		}
+	}
 }
 
 func shipIsClose(state *models.GameState, x float32, y float32, dist float64) bool {
@@ -95,6 +106,29 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 	state.CurrentCollisions = currentCollisions
 
 	graphics.DrawShip(screen, 30, 40, state.ShipX, state.ShipY, state.ShipRotation, state.GameImages.EmptyImage)
+	graphics.DrawFuel(screen, constants.ScreenWidth, 20, float64(state.Fuel))
+
+	if state.Countdown > 0 {
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight/2,
+			fmt.Sprintf("Starting in %d sec.", state.Countdown))
+	}
+
+	if state.Fuel <= 0 {
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight/2,
+			"NO FUEL.")
+	}
+
+	if state.ItemsLeft == 0 {
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight/2,
+			"Stage cleared! Press SPACE to continue.")
+	}
+
+	graphics.DisplayMessage(screen, 20,
+		constants.ScreenHeight-20,
+		fmt.Sprintf("%d left", state.ItemsLeft))
 
 	return nil
 }
@@ -106,9 +140,12 @@ func rotateShip(state *models.GameState) {
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
 		state.ShipRotation = state.ShipRotation - 0.025
 	}
+	if ebiten.IsKeyPressed(ebiten.KeySpace) && state.ItemsLeft == 0 && state.Countdown == 0 {
+		initialize(state)
+	}
 
 	if state.ShipRotation > math.Pi*2 {
-		state.ShipRotation = math.Pi * 2
+		state.ShipRotation = 0
 	}
 }
 
@@ -139,10 +176,13 @@ func updateFuel(state *models.GameState) {
 		collisionChar := state.Map[collision.X][collision.Y]
 		if collisionChar == 'X' {
 			state.Map[collision.X][collision.Y] = '0'
-			fmt.Println(fmt.Sprintf("killed %d %d", collision.X, collision.Y))
-			fmt.Println(state.CurrentCollisions)
+			state.ItemsLeft = state.ItemsLeft - 1
+			state.Fuel += 10
 		}
 
+		if collisionChar == '0' {
+			state.Fuel -= 0.1
+		}
 	}
 
 	state.Fuel -= 0.01
@@ -151,9 +191,29 @@ func updateFuel(state *models.GameState) {
 func RunGame(state *models.GameState) *GameLoop {
 	initialize(state)
 
+	ts := time.Now().Second() + 1
+
 	gameLoop := PrepareGameLoop(func(delta int64) {
 		rotateShip(state)
+
+		if state.Countdown != 0 {
+			if time.Now().Second()-ts >= 1 {
+				state.Countdown = state.Countdown - 1
+				ts = time.Now().Second()
+			}
+			return
+		}
+
+		if state.Fuel <= 0 {
+			return
+		}
+
+		if state.ItemsLeft == 0 {
+			return
+		}
+
 		moveTerrain(state)
+
 		updateFuel(state)
 	}, func() {
 	})

@@ -1,12 +1,15 @@
 package graphics
 
 import (
+	"image/color"
 	"math"
 
 	"janrobas/spaceship/fonts"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/text"
 	"golang.org/x/image/font"
 )
 
@@ -18,7 +21,7 @@ func init() {
 	tt, _ := truetype.Parse(fonts.ArcadeN_ttf)
 
 	const (
-		arcadeFontSize = 8
+		arcadeFontSize = 16
 		dpi            = 72
 	)
 
@@ -101,4 +104,12 @@ func DrawShip(screen *ebiten.Image, w float32, h float32, x float32, y float32, 
 	indices := []uint16{}
 	indices = append(indices, 0, 1, 2)
 	screen.DrawTriangles(vs, indices, img, op)
+}
+
+func DisplayMessage(screen *ebiten.Image, x float32, y float32, message string) {
+	text.Draw(screen, message, arcadeFont, int(x), int(y), color.White)
+}
+
+func DrawFuel(screen *ebiten.Image, w float64, h float64, value float64) {
+	ebitenutil.DrawRect(screen, 0, 0, w*value/100, h, color.RGBA{B: 200, G: 50, R: 200, A: 200})
 }

@@ -16,6 +16,8 @@ type GameState struct {
 	Fuel              float32
 	ShipRotation      float32
 	GameImages        GameImages
+	Countdown         int
+	ItemsLeft         int
 }
 
 type IntCoordinates struct {

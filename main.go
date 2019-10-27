@@ -65,25 +65,7 @@ func main() {
 
 	gameState = &models.GameState{}
 
-	gameState.Map = [][]rune{
-		/*[]rune("00XXX01"),
-		[]rune("0X11001"),
-		[]rune("0010001X"),
-		[]rune("0X10001"),
-		[]rune("0X10011"),
-		[]rune("0X11011"),
-		[]rune("1111111"),*/
-
-		[]rune("000000000"),
-		[]rune("00000XX00"),
-		[]rune("000001100"),
-		[]rune("000001100"),
-		[]rune("011001100"),
-		[]rune("001111000"),
-		[]rune("000000000"),
-	}
-
-	gameState.Map = stringToGameMap("00X000000\n001111100\n001000000\n001111100\n0010X0X00\n001111100")
+	gameState.Map = stringToGameMap("000000000\n001111100\n001000000\n001111100\n001X00000\n001111100")
 
 	fmt.Println(gameState.Map)
 	//panic("nc")
