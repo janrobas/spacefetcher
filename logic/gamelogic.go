@@ -25,14 +25,14 @@ func initialize(state *models.GameState) {
 
 		state.GameImages.HexDanger, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
 		state.GameImages.HexRoad, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-		state.GameImages.HexRoadFar, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
+		state.GameImages.HexRoadFast, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
 		state.GameImages.HexSpace, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
 		state.GameImages.HexFuel, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
 		state.GameImages.EmptyImage, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
 	}
 
 	state.GameImages.HexRoad.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 200})
-	state.GameImages.HexRoadFar.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 150})
+	state.GameImages.HexRoadFast.Fill(color.RGBA{R: 23, G: 200, B: 23, A: 150})
 	state.GameImages.HexSpace.Fill(color.RGBA{R: 8, B: 10, G: 10, A: 255})
 	state.GameImages.HexDanger.Fill(color.RGBA{B: 23, G: 23, R: 200, A: 200})
 	state.GameImages.HexFuel.Fill(color.RGBA{B: 200, G: 50, R: 200, A: 200})
@@ -83,6 +83,8 @@ func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, 
 		img = state.GameImages.HexFuel
 	} else if isOnMap && state.Map[logicalX][logicalY] == '1' {
 		img = state.GameImages.HexRoad
+	} else if isOnMap && state.Map[logicalX][logicalY] == '2' {
+		img = state.GameImages.HexRoadFast
 	} else if shipIsOnThisHex {
 		img = state.GameImages.HexDanger
 	} else {
@@ -187,8 +189,20 @@ func processKeyboardActions(state *models.GameState, delta int64) {
 }
 
 func moveTerrain(state *models.GameState, delta int64) {
-	state.MoveXOffset -= float32(math.Sin(float64(state.ShipRotation))) * (float32(delta) / 7.5)
-	state.MoveYOffset += float32(math.Cos(float64(state.ShipRotation))) * (float32(delta) / 7.5)
+	terrainSpeedMultiply := float32(1)
+
+	if ebiten.IsKeyPressed(ebiten.KeyUp) {
+		for _, collision := range state.CurrentCollisions {
+			collisionChar := state.Map[collision.X][collision.Y]
+			if collisionChar == '2' {
+				terrainSpeedMultiply = float32(2)
+				break
+			}
+		}
+	}
+
+	state.MoveXOffset -= float32(math.Sin(float64(state.ShipRotation))) * (float32(delta) / 7.5) * terrainSpeedMultiply
+	state.MoveYOffset += float32(math.Cos(float64(state.ShipRotation))) * (float32(delta) / 7.5) * terrainSpeedMultiply
 
 	if math.Abs(float64(state.MoveXOffset)) > 160 {
 		if state.MoveXOffset < 0 {

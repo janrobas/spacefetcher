@@ -30,10 +30,10 @@ type IntCoordinates struct {
 }
 
 type GameImages struct {
-	EmptyImage *ebiten.Image
-	HexRoad    *ebiten.Image
-	HexRoadFar *ebiten.Image
-	HexSpace   *ebiten.Image
-	HexDanger  *ebiten.Image
-	HexFuel    *ebiten.Image
+	EmptyImage  *ebiten.Image
+	HexRoad     *ebiten.Image
+	HexRoadFast *ebiten.Image
+	HexSpace    *ebiten.Image
+	HexDanger   *ebiten.Image
+	HexFuel     *ebiten.Image
 }
