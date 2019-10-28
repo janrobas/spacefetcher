@@ -1,4 +1,4 @@
-module janrobas/spaceship
+module janrobas/spacefetcher
 
 go 1.13
 

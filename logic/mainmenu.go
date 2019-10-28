@@ -2,8 +2,8 @@ package logic
 
 import (
 	"image/color"
-	graphics "janrobas/spaceship/graphics"
-	"janrobas/spaceship/models"
+	graphics "janrobas/spacefetcher/graphics"
+	"janrobas/spacefetcher/models"
 
 	"github.com/hajimehoshi/ebiten"
 )

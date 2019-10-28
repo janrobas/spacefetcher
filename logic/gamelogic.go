@@ -6,9 +6,9 @@ import (
 	"math"
 	"time"
 
-	"janrobas/spaceship/constants"
-	graphics "janrobas/spaceship/graphics"
-	"janrobas/spaceship/models"
+	"janrobas/spacefetcher/constants"
+	graphics "janrobas/spacefetcher/graphics"
+	"janrobas/spacefetcher/models"
 
 	"github.com/hajimehoshi/ebiten"
 )

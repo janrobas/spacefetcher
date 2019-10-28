@@ -2,9 +2,9 @@ package main
 
 import (
 	"image/color"
-	"janrobas/spaceship/constants"
-	"janrobas/spaceship/logic"
-	"janrobas/spaceship/models"
+	"janrobas/spacefetcher/constants"
+	"janrobas/spacefetcher/logic"
+	"janrobas/spacefetcher/models"
 	"log"
 	"strings"
 

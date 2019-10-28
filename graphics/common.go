@@ -1,7 +1,7 @@
 package graphics
 
 import (
-	"janrobas/spaceship/fonts"
+	"janrobas/spacefetcher/fonts"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
