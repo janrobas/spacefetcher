@@ -159,12 +159,18 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 	return nil
 }
 
-func rotateShip(state *models.GameState) {
+func processKeyboardActions(state *models.GameState, delta int64) {
+	gameFinished := state.ItemsLeft == 0 && state.CurrentMapIndex == len(state.Maps)-1
+
+	if gameFinished {
+		return
+	}
+
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		state.ShipRotation = state.ShipRotation + 0.025
+		state.ShipRotation = state.ShipRotation + float32(delta)/599
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		state.ShipRotation = state.ShipRotation - 0.025
+		state.ShipRotation = state.ShipRotation - float32(delta)/599
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeySpace) &&
@@ -180,9 +186,9 @@ func rotateShip(state *models.GameState) {
 	}
 }
 
-func moveTerrain(state *models.GameState) {
-	state.MoveXOffset -= float32(math.Sin(float64(state.ShipRotation))) * 2
-	state.MoveYOffset += float32(math.Cos(float64(state.ShipRotation))) * 2
+func moveTerrain(state *models.GameState, delta int64) {
+	state.MoveXOffset -= float32(math.Sin(float64(state.ShipRotation))) * (float32(delta) / 7.5)
+	state.MoveYOffset += float32(math.Cos(float64(state.ShipRotation))) * (float32(delta) / 7.5)
 
 	if math.Abs(float64(state.MoveXOffset)) > 160 {
 		if state.MoveXOffset < 0 {
@@ -202,9 +208,9 @@ func moveTerrain(state *models.GameState) {
 	}
 }
 
-func updateFuel(state *models.GameState) {
+func updateFuel(state *models.GameState, delta int64) {
 	if len(state.CurrentCollisions) == 0 {
-		state.Fuel -= 0.09
+		state.Fuel -= float32(delta) / 166
 	}
 
 	for _, collision := range state.CurrentCollisions {
@@ -220,7 +226,7 @@ func updateFuel(state *models.GameState) {
 		}
 	}
 
-	state.Fuel -= 0.01
+	state.Fuel -= float32(delta) / 1444
 }
 
 func RunGame(state *models.GameState) *GameLoop {
@@ -231,7 +237,7 @@ func RunGame(state *models.GameState) *GameLoop {
 			return
 		}
 
-		rotateShip(state)
+		processKeyboardActions(state, delta)
 
 		if state.Countdown != 0 {
 			if time.Now().Unix()-state.CountdownTs >= 1 {
@@ -249,9 +255,9 @@ func RunGame(state *models.GameState) *GameLoop {
 			return
 		}
 
-		moveTerrain(state)
+		moveTerrain(state, delta)
 
-		updateFuel(state)
+		updateFuel(state, delta)
 	}, func() {
 	})
 
