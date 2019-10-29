@@ -1,5 +1,6 @@
 package models
 
 type MenuState struct {
-	StartGame bool
+	StartGame    bool
+	ShipRotation float32
 }

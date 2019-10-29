@@ -2,23 +2,39 @@ package logic
 
 import (
 	"image/color"
+	"janrobas/spacefetcher/constants"
 	graphics "janrobas/spacefetcher/graphics"
 	"janrobas/spacefetcher/models"
 
 	"github.com/hajimehoshi/ebiten"
 )
 
-func UpdateMenu(screen *ebiten.Image) error {
+func UpdateMenu(screen *ebiten.Image, state *models.MenuState, gameImages *models.GameImages) error {
 	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
 
-	graphics.DrawText(screen, 50, 50, "Ship flies by itself.", color.White)
-	graphics.DrawText(screen, 50, 100, "Left and right arrows rotate ship.", color.White)
-	graphics.DrawText(screen, 50, 150, "Try to stay on blue path.", color.RGBA{R: 23, G: 23, B: 200, A: 200})
-	graphics.DrawText(screen, 50, 200, "You must pick up violet stuff.", color.RGBA{B: 200, G: 50, R: 200, A: 200})
-	graphics.DrawText(screen, 50, 250, "Press SPACE to start.", color.White)
+	yPos := float32(100)
+	graphics.DrawShip(screen, 40, 50, 50, yPos, state.ShipRotation, gameImages.EmptyImage)
+	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "Use arrow keys to drive the ship.", color.White)
 
+	yPos += 80
+	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexRoad)
+	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "Use less fuel by staying on blue path.", color.White)
+
+	yPos += 80
+	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexFuel)
+	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "You must pick up violet stuff.", color.White)
+
+	yPos += 80
+	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexRoadFast)
+	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "You can accelerate on green path.", color.White)
+
+	yPos += 120
+	graphics.DrawText(screen, 40, yPos, "Ship flies by itself.", color.White)
+
+	yPos += 80
+	graphics.DrawText(screen, 40, yPos, "Press SPACE to start!", color.RGBA{B: 200, G: 50, R: 200, A: 200})
 	return nil
 }
 
@@ -34,6 +50,8 @@ func RunMenu(state *models.MenuState) *GameLoop {
 
 	gameLoop := PrepareGameLoop(func(delta int64, gameLoop *GameLoop) {
 		checkKeyPress(gameLoop, state)
+
+		state.ShipRotation = state.ShipRotation + float32(delta)/599
 	}, func() {
 	})
 

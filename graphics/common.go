@@ -8,20 +8,15 @@ import (
 )
 
 var (
-	arcadeFont font.Face
+	mainFont font.Face
 )
 
 func init() {
-	tt, _ := truetype.Parse(fonts.ArcadeN_ttf)
+	tt, _ := truetype.Parse(fonts.MPlus1pRegular_ttf)
 
-	const (
-		arcadeFontSize = 16
-		dpi            = 72
-	)
-
-	arcadeFont = truetype.NewFace(tt, &truetype.Options{
-		Size:    arcadeFontSize,
-		DPI:     dpi,
+	mainFont = truetype.NewFace(tt, &truetype.Options{
+		Size:    24,
+		DPI:     72,
 		Hinting: font.HintingFull,
 	})
 }

@@ -19,7 +19,7 @@ func PrepareGameLoop(onUpdate func(int64, *GameLoop), onStop func()) *GameLoop {
 }
 
 func StartGameLoop(gameLoop *GameLoop) {
-	ticker := time.NewTicker(16 * time.Millisecond)
+	ticker := time.NewTicker(18 * time.Millisecond)
 
 	tsStart := time.Now().UnixNano() / 1000000
 

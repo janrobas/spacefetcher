@@ -2,6 +2,7 @@ package graphics
 
 import (
 	"image/color"
+	"janrobas/spacefetcher/constants"
 	"math"
 
 	"github.com/hajimehoshi/ebiten"
@@ -46,7 +47,7 @@ func makeHexVertex(x float32, y float32) ebiten.Vertex {
 	}
 }
 
-func DrawHex(screen *ebiten.Image, w float32, h float32, x float32, y float32, logicalX int, logicalY int, img *ebiten.Image) {
+func DrawHex(screen *ebiten.Image, w float32, h float32, x float32, y float32, img *ebiten.Image) {
 
 	centerX := w / 2
 	centerY := h / 2
@@ -65,8 +66,6 @@ func DrawHex(screen *ebiten.Image, w float32, h float32, x float32, y float32, l
 	indices = append(indices, 0, 1, 2, 0, 5, 3, 3, 2, 0, 5, 4, 3)
 
 	screen.DrawTriangles(vs, indices, img, op)
-
-	//text.Draw(screen, fmt.Sprintf("%d %d", logicalX, logicalY), arcadeFont, int(x), int(y+centerY), color.White)
 }
 
 func DrawShip(screen *ebiten.Image, w float32, h float32, x float32, y float32, rotation float32, img *ebiten.Image) {
@@ -84,8 +83,12 @@ func DrawShip(screen *ebiten.Image, w float32, h float32, x float32, y float32, 
 	screen.DrawTriangles(vs, indices, img, op)
 }
 
+func DarkScreen(screen *ebiten.Image) {
+	ebitenutil.DrawRect(screen, 0, 0, constants.ScreenWidth, constants.ScreenHeight, color.RGBA{B: 0, G: 0, R: 0, A: 150})
+}
+
 func DisplayMessage(screen *ebiten.Image, x float32, y float32, message string) {
-	text.Draw(screen, message, arcadeFont, int(x), int(y), color.White)
+	text.Draw(screen, message, mainFont, int(x), int(y), color.White)
 }
 
 func DrawFuel(screen *ebiten.Image, w float64, h float64, value float64) {

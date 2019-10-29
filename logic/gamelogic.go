@@ -2,7 +2,6 @@ package logic
 
 import (
 	"fmt"
-	"image/color"
 	"math"
 	"time"
 
@@ -20,36 +19,24 @@ func initialize(state *models.GameState) {
 	state.CountdownTs = time.Now().Unix() + 1
 	state.Fuel = 100
 
-	if state.GameImages == nil {
-		state.GameImages = &models.GameImages{}
-
-		state.GameImages.HexDanger, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-		state.GameImages.HexRoad, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-		state.GameImages.HexRoadFast, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-		state.GameImages.HexSpace, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-		state.GameImages.HexFuel, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-		state.GameImages.EmptyImage, _ = ebiten.NewImage(16, 16, ebiten.FilterDefault)
-	}
-
-	state.GameImages.HexRoad.Fill(color.RGBA{R: 23, G: 23, B: 200, A: 200})
-	state.GameImages.HexRoadFast.Fill(color.RGBA{R: 23, G: 200, B: 23, A: 150})
-	state.GameImages.HexSpace.Fill(color.RGBA{R: 8, B: 10, G: 10, A: 255})
-	state.GameImages.HexDanger.Fill(color.RGBA{B: 23, G: 23, R: 200, A: 200})
-	state.GameImages.HexFuel.Fill(color.RGBA{B: 200, G: 50, R: 200, A: 200})
-	state.GameImages.EmptyImage.Fill(color.RGBA{B: 200, G: 200, R: 200, A: 200})
-
 	state.ShipX = constants.ScreenWidth / 2
 	state.ShipY = constants.ScreenHeight / 2
 	state.MoveXOffset = 0
 	state.MoveYOffset = 0
-	state.IndexXOffset = 0 // TODO
-	state.IndexYOffset = 0 // TODO
+
+	state.IndexXOffset = 0
+	state.IndexYOffset = 0
 
 	state.Map = make([][]rune, len(state.Maps[state.CurrentMapIndex]))
 	for i, row := range state.Maps[state.CurrentMapIndex] {
 		state.Map[i] = make([]rune, len(row))
 		for j, val := range row {
 			state.Map[i][j] = val
+
+			if val == 'S' {
+				state.IndexXOffset = i - constants.HexesX/2 - 1
+				state.IndexYOffset = j - constants.HexesY/2 - 3
+			}
 		}
 	}
 
@@ -70,7 +57,7 @@ func shipIsClose(state *models.GameState, x float32, y float32, dist float64) bo
 		math.Abs(float64(y)-float64(state.ShipY)) < dist/1.5
 }
 
-func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, w float32, h float32, x float32, y float32, logicalX int, logicalY int) bool {
+func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, w float32, h float32, x float32, y float32, logicalX int, logicalY int, images *models.GameImages) bool {
 	isOnMap := logicalX >= 0 && logicalY >= 0 &&
 		len(state.Map) > logicalX &&
 		len(state.Map[logicalX]) > logicalY
@@ -80,43 +67,43 @@ func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, 
 	shipIsOnThisHex := shipIsClose(state, x, y, constants.HexSize)
 
 	if isOnMap && state.Map[logicalX][logicalY] == 'X' {
-		img = state.GameImages.HexFuel
-	} else if isOnMap && state.Map[logicalX][logicalY] == '1' {
-		img = state.GameImages.HexRoad
+		img = images.HexFuel
+	} else if isOnMap && (state.Map[logicalX][logicalY] == '1' || state.Map[logicalX][logicalY] == 'S') {
+		img = images.HexRoad
 	} else if isOnMap && state.Map[logicalX][logicalY] == '2' {
-		img = state.GameImages.HexRoadFast
+		img = images.HexRoadFast
 	} else if shipIsOnThisHex {
-		img = state.GameImages.HexDanger
+		img = images.HexDanger
 	} else {
-		img = state.GameImages.HexSpace
+		img = images.HexSpace
 	}
 
-	graphics.DrawHex(screen, w, h, x, y, logicalX, logicalY, img)
+	graphics.DrawHex(screen, w, h, x, y, img)
 
 	return shipIsOnThisHex && isOnMap
 }
 
-func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
+func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.GameImages) error {
 	if ebiten.IsDrawingSkipped() || !state.GameRunning {
 		return nil
 	}
 
 	currentCollisions := make([]models.IntCoordinates, 0)
-	for i := 0; i < 20; i++ {
-		for j := 0; j < 20; j++ {
+	for i := 0; i < constants.HexesX; i++ {
+		for j := 0; j < constants.HexesY; j++ {
 
-			offset := -4*constants.HexSize + 10
+			offset := -4 * constants.HexSize
 			if j%2 == 1 {
-				offset = offset - constants.HexSize + 24
+				offset = offset - constants.HexSize + constants.HexSize/2 - constants.HexMarginLeft + constants.HexMarginLeft/2
 			}
 
 			logicalX := i + state.IndexXOffset
-			logicalY := 20 - j + state.IndexYOffset
+			logicalY := constants.HexesY - j + state.IndexYOffset
 
 			isCollision := drawHexAndReturnIfCollision(screen, state, constants.HexSize, constants.HexSize,
-				float32(+offset+i*(constants.HexSize+4))+state.MoveXOffset,
-				float32(-(2*constants.HexSize)+j*(constants.HexSize-9))+state.MoveYOffset,
-				logicalX, logicalY)
+				float32(+offset+i*(constants.HexSize+constants.HexMarginLeft))+state.MoveXOffset,
+				float32(-(2*constants.HexSize)+j*(constants.HexSize+constants.HexMarginTop))+state.MoveYOffset,
+				logicalX, logicalY, images)
 
 			if isCollision {
 				currentCollisions = append(currentCollisions, models.IntCoordinates{X: logicalX, Y: logicalY})
@@ -127,14 +114,24 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 	state.CurrentCollisions = currentCollisions
 
 	if state.ItemsLeft == 0 && state.CurrentMapIndex == len(state.Maps)-1 {
+		graphics.DarkScreen(screen)
+
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2,
-			"Congratulations!")
+			"Congratulations, space cadet,")
+
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight/2+30,
+			"you've cleared all stages!")
+
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight/2+70,
+			"Always keep searching and never get lost!")
 		return nil
 	}
 
-	graphics.DrawShip(screen, 30, 40, state.ShipX, state.ShipY, state.ShipRotation, state.GameImages.EmptyImage)
-	graphics.DrawFuel(screen, constants.ScreenWidth, 20, float64(state.Fuel))
+	graphics.DrawShip(screen, 40, 50, state.ShipX, state.ShipY, state.ShipRotation, images.EmptyImage)
+	graphics.DrawFuel(screen, constants.ScreenWidth, 30, float64(state.Fuel))
 
 	if state.Countdown > 0 {
 		graphics.DisplayMessage(screen, 20,
@@ -143,12 +140,14 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState) error {
 	}
 
 	if state.Fuel <= 0 {
+		graphics.DarkScreen(screen)
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2,
 			"NO FUEL. Press SPACE to restart.")
 	}
 
 	if state.ItemsLeft == 0 {
+		graphics.DarkScreen(screen)
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2,
 			"Stage cleared! Press SPACE to continue.")
@@ -204,7 +203,7 @@ func moveTerrain(state *models.GameState, delta int64) {
 	state.MoveXOffset -= float32(math.Sin(float64(state.ShipRotation))) * (float32(delta) / 7.5) * terrainSpeedMultiply
 	state.MoveYOffset += float32(math.Cos(float64(state.ShipRotation))) * (float32(delta) / 7.5) * terrainSpeedMultiply
 
-	if math.Abs(float64(state.MoveXOffset)) > 160 {
+	if math.Abs(float64(state.MoveXOffset)) > 3*constants.HexSize+3*constants.HexMarginLeft {
 		if state.MoveXOffset < 0 {
 			state.IndexXOffset = state.IndexXOffset + 3
 		} else {
@@ -212,7 +211,7 @@ func moveTerrain(state *models.GameState, delta int64) {
 		}
 		state.MoveXOffset = 0
 	}
-	if math.Abs(float64(state.MoveYOffset)) > 80 {
+	if math.Abs(float64(state.MoveYOffset)) > 2*constants.HexSize+2*constants.HexMarginTop {
 		if state.MoveYOffset < 0 {
 			state.IndexYOffset = state.IndexYOffset - 2
 		} else {
