@@ -14,21 +14,23 @@ func UpdateMenu(screen *ebiten.Image, state *models.MenuState, gameImages *model
 		return nil
 	}
 
+	graphics.DrawText(screen, 40, 50, "SPACE FETCHER", color.White)
+
 	yPos := float32(100)
 	graphics.DrawShip(screen, 40, 50, 50, yPos, state.ShipRotation, gameImages.EmptyImage)
-	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "Use arrow keys to drive the ship.", color.White)
+	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "Use arrow keys to drive the ship.", color.White)
 
 	yPos += 80
 	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexRoad)
-	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "Use less fuel by staying on blue path.", color.White)
+	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "Use less fuel by staying on the blue path.", color.White)
 
 	yPos += 80
 	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexFuel)
-	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "You must pick up violet stuff.", color.White)
+	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "You must pick up violet stuff.", color.White)
 
 	yPos += 80
 	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexRoadFast)
-	graphics.DrawText(screen, 40+constants.HexSize+20, yPos+constants.HexSize/2+5, "You can accelerate on green path.", color.White)
+	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "You can accelerate on green path.", color.White)
 
 	yPos += 120
 	graphics.DrawText(screen, 40, yPos, "Ship flies by itself.", color.White)

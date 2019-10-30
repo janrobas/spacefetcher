@@ -131,7 +131,7 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 	}
 
 	graphics.DrawShip(screen, 40, 50, state.ShipX, state.ShipY, state.ShipRotation, images.EmptyImage)
-	graphics.DrawFuel(screen, constants.ScreenWidth, 30, float64(state.Fuel))
+	graphics.DrawFuel(screen, constants.ScreenWidth, 25, float64(state.Fuel))
 
 	if state.Countdown > 0 {
 		graphics.DisplayMessage(screen, 20,
@@ -155,7 +155,7 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 
 	graphics.DisplayMessage(screen, 20,
 		constants.ScreenHeight-20,
-		fmt.Sprintf("%d left", state.ItemsLeft))
+		fmt.Sprintf("%d left to pick", state.ItemsLeft))
 
 	return nil
 }
