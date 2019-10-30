@@ -17,6 +17,7 @@ type GameState struct {
 	CurrentMapIndex   int
 	Maps              [][][]rune
 	GameRunning       bool
+	Score             int
 }
 
 type IntCoordinates struct {

@@ -126,7 +126,12 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2+70,
+			fmt.Sprintf("Your final score: %d", state.Score+int(math.Ceil(float64(state.Fuel)))))
+
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight/2+110,
 			"Always keep searching and never get lost!")
+
 		return nil
 	}
 
@@ -155,7 +160,13 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 
 	graphics.DisplayMessage(screen, 20,
 		constants.ScreenHeight-20,
-		fmt.Sprintf("%d left to pick", state.ItemsLeft))
+		fmt.Sprintf("%d item left to pick", state.ItemsLeft))
+
+	if state.Score != 0 {
+		graphics.DisplayMessage(screen, 20,
+			constants.ScreenHeight-50,
+			fmt.Sprintf("Score: %d", state.Score))
+	}
 
 	return nil
 }
@@ -178,7 +189,14 @@ func processKeyboardActions(state *models.GameState, delta int64) {
 		(state.ItemsLeft == 0 && state.Countdown == 0 || state.Fuel <= 0) {
 		if state.ItemsLeft == 0 && state.Countdown == 0 {
 			state.CurrentMapIndex = state.CurrentMapIndex + 1
+			state.Score += int(math.Ceil(float64(state.Fuel)))
 		}
+
+		initialize(state)
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyBackspace) && state.Countdown == 0 {
+		// restart
 		initialize(state)
 	}
 
@@ -244,6 +262,7 @@ func updateFuel(state *models.GameState, delta int64) {
 
 func RunGame(state *models.GameState) *GameLoop {
 	initialize(state)
+	state.Score = 0
 
 	gameLoop := PrepareGameLoop(func(delta int64, gl *GameLoop) {
 		if !state.GameRunning {
