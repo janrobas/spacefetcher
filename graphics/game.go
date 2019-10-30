@@ -91,8 +91,9 @@ func DisplayMessage(screen *ebiten.Image, x float32, y float32, message string) 
 	text.Draw(screen, message, mainFont, int(x), int(y), color.White)
 }
 
-func DrawFuel(screen *ebiten.Image, w float64, h float64, value float64) {
+func DrawFuel(screen *ebiten.Image, value float64) {
+	w := float64(constants.ScreenWidth)
+	h := float64(30)
 	ebitenutil.DrawRect(screen, 0, 0, w, h, color.RGBA{B: 200, G: 50, R: 200, A: 50})
 	ebitenutil.DrawRect(screen, 0, 0, w*value/100, h, color.RGBA{B: 200, G: 50, R: 200, A: 200})
-	text.Draw(screen, "FUEL", mainFont, 0, int(h/2)+8, color.White)
 }

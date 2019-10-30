@@ -26,14 +26,14 @@ func UpdateMenu(screen *ebiten.Image, state *models.MenuState, gameImages *model
 
 	yPos += 80
 	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexFuel)
-	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "You must pick up violet stuff.", color.White)
+	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "You must pick up violet stuff. They also increase fuel.", color.White)
 
 	yPos += 80
 	graphics.DrawHex(screen, constants.HexSize, constants.HexSize, 40, yPos, gameImages.HexRoadFast)
-	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "You can accelerate on green path.", color.White)
+	graphics.DrawText(screen, 40+constants.HexSize+25, yPos+constants.HexSize/2+5, "You can accelerate on green path (arrow key up).", color.White)
 
 	yPos += 120
-	graphics.DrawText(screen, 40, yPos, "Ship flies by itself.", color.White)
+	graphics.DrawText(screen, 40, yPos, "You get more points by using less fuel. Ship flies by itself.", color.White)
 
 	yPos += 80
 	graphics.DrawText(screen, 40, yPos, "Press SPACE to start!", color.RGBA{B: 200, G: 50, R: 200, A: 200})

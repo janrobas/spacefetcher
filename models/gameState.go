@@ -7,7 +7,7 @@ type GameState struct {
 	IndexYOffset      int
 	ShipX             float32
 	ShipY             float32
-	Map               [][]rune
+	CurrentMap        GameMap
 	CurrentCollisions []IntCoordinates
 	Fuel              float32
 	ShipRotation      float32
@@ -15,9 +15,14 @@ type GameState struct {
 	CountdownTs       int64
 	ItemsLeft         int
 	CurrentMapIndex   int
-	Maps              [][][]rune
+	Maps              []GameMap
 	GameRunning       bool
 	Score             int
+}
+
+type GameMap struct {
+	Map  [][]rune
+	Name string
 }
 
 type IntCoordinates struct {

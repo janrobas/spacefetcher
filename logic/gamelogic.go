@@ -27,11 +27,15 @@ func initialize(state *models.GameState) {
 	state.IndexXOffset = 0
 	state.IndexYOffset = 0
 
-	state.Map = make([][]rune, len(state.Maps[state.CurrentMapIndex]))
-	for i, row := range state.Maps[state.CurrentMapIndex] {
-		state.Map[i] = make([]rune, len(row))
+	state.CurrentMap = models.GameMap{
+		Name: state.Maps[state.CurrentMapIndex].Name,
+		Map:  make([][]rune, len(state.Maps[state.CurrentMapIndex].Map)),
+	}
+
+	for i, row := range state.Maps[state.CurrentMapIndex].Map {
+		state.CurrentMap.Map[i] = make([]rune, len(row))
 		for j, val := range row {
-			state.Map[i][j] = val
+			state.CurrentMap.Map[i][j] = val
 
 			if val == 'S' {
 				state.IndexXOffset = i - constants.HexesX/2 - 1
@@ -41,7 +45,7 @@ func initialize(state *models.GameState) {
 	}
 
 	state.ItemsLeft = 0
-	for _, row := range state.Map {
+	for _, row := range state.CurrentMap.Map {
 		for _, val := range row {
 			if val == 'X' {
 				state.ItemsLeft = state.ItemsLeft + 1
@@ -59,18 +63,18 @@ func shipIsClose(state *models.GameState, x float32, y float32, dist float64) bo
 
 func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, w float32, h float32, x float32, y float32, logicalX int, logicalY int, images *models.GameImages) bool {
 	isOnMap := logicalX >= 0 && logicalY >= 0 &&
-		len(state.Map) > logicalX &&
-		len(state.Map[logicalX]) > logicalY
+		len(state.CurrentMap.Map) > logicalX &&
+		len(state.CurrentMap.Map[logicalX]) > logicalY
 
 	var img *ebiten.Image
 
 	shipIsOnThisHex := shipIsClose(state, x, y, constants.HexSize)
 
-	if isOnMap && state.Map[logicalX][logicalY] == 'X' {
+	if isOnMap && state.CurrentMap.Map[logicalX][logicalY] == 'X' {
 		img = images.HexFuel
-	} else if isOnMap && (state.Map[logicalX][logicalY] == '1' || state.Map[logicalX][logicalY] == 'S') {
+	} else if isOnMap && (state.CurrentMap.Map[logicalX][logicalY] == '1' || state.CurrentMap.Map[logicalX][logicalY] == 'S') {
 		img = images.HexRoad
-	} else if isOnMap && state.Map[logicalX][logicalY] == '2' {
+	} else if isOnMap && state.CurrentMap.Map[logicalX][logicalY] == '2' {
 		img = images.HexRoadFast
 	} else if shipIsOnThisHex {
 		img = images.HexDanger
@@ -136,7 +140,9 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 	}
 
 	graphics.DrawShip(screen, 40, 50, state.ShipX, state.ShipY, state.ShipRotation, images.EmptyImage)
-	graphics.DrawFuel(screen, constants.ScreenWidth, 25, float64(state.Fuel))
+	graphics.DrawFuel(screen, float64(state.Fuel))
+
+	graphics.DisplayMessage(screen, 20, 22, fmt.Sprintf("Stage: %s", state.CurrentMap.Name))
 
 	if state.Countdown > 0 {
 		graphics.DisplayMessage(screen, 20,
@@ -160,7 +166,7 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 
 	graphics.DisplayMessage(screen, 20,
 		constants.ScreenHeight-20,
-		fmt.Sprintf("%d item left to pick", state.ItemsLeft))
+		fmt.Sprintf("%d left to pick", state.ItemsLeft))
 
 	if state.Score != 0 {
 		graphics.DisplayMessage(screen, 20,
@@ -210,7 +216,7 @@ func moveTerrain(state *models.GameState, delta int64) {
 
 	if ebiten.IsKeyPressed(ebiten.KeyUp) {
 		for _, collision := range state.CurrentCollisions {
-			collisionChar := state.Map[collision.X][collision.Y]
+			collisionChar := state.CurrentMap.Map[collision.X][collision.Y]
 			if collisionChar == '2' {
 				terrainSpeedMultiply = float32(2)
 				break
@@ -245,9 +251,9 @@ func updateFuel(state *models.GameState, delta int64) {
 	}
 
 	for _, collision := range state.CurrentCollisions {
-		collisionChar := state.Map[collision.X][collision.Y]
+		collisionChar := state.CurrentMap.Map[collision.X][collision.Y]
 		if collisionChar == 'X' {
-			state.Map[collision.X][collision.Y] = '0'
+			state.CurrentMap.Map[collision.X][collision.Y] = '0'
 			state.ItemsLeft = state.ItemsLeft - 1
 			state.Fuel += 10
 		}
