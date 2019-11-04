@@ -177,7 +177,7 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 	return nil
 }
 
-func processKeyboardActions(state *models.GameState, delta int64) {
+func processKeyboardActions(state *models.GameState, gameaudio *models.GameAudio, delta int64) {
 	gameFinished := state.ItemsLeft == 0 && state.CurrentMapIndex == len(state.Maps)-1
 
 	if gameFinished {
@@ -204,6 +204,30 @@ func processKeyboardActions(state *models.GameState, delta int64) {
 	if ebiten.IsKeyPressed(ebiten.KeyBackspace) && state.Countdown == 0 {
 		// restart
 		initialize(state)
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyM) {
+		// this is checked on every tick in game loop
+		// we want to wait a little before changing state, so we don't do mute-unmute-mute-unmute loop
+		tMuteChange := time.NewTimer(time.Millisecond * 500)
+
+		if gameaudio.Muted {
+			gameaudio.Theme.SetVolume(1)
+			gameaudio.Pick.SetVolume(1)
+
+			go func() {
+				<-tMuteChange.C
+				gameaudio.Muted = false
+			}()
+		} else {
+			gameaudio.Theme.SetVolume(0)
+			gameaudio.Pick.SetVolume(0)
+
+			go func() {
+				<-tMuteChange.C
+				gameaudio.Muted = true
+			}()
+		}
 	}
 
 	if state.ShipRotation > math.Pi*2 {
@@ -245,7 +269,7 @@ func moveTerrain(state *models.GameState, delta int64) {
 	}
 }
 
-func updateFuel(state *models.GameState, delta int64) {
+func updateFuel(state *models.GameState, gameaudio *models.GameAudio, delta int64) {
 	if len(state.CurrentCollisions) == 0 {
 		state.Fuel -= float32(delta) / 166
 	}
@@ -256,6 +280,8 @@ func updateFuel(state *models.GameState, delta int64) {
 			state.CurrentMap.Map[collision.X][collision.Y] = '0'
 			state.ItemsLeft = state.ItemsLeft - 1
 			state.Fuel += 10
+			gameaudio.Pick.Rewind()
+			gameaudio.Pick.Play()
 		}
 
 		if collisionChar == '0' {
@@ -266,16 +292,20 @@ func updateFuel(state *models.GameState, delta int64) {
 	state.Fuel -= float32(delta) / 1444
 }
 
-func RunGame(state *models.GameState) *GameLoop {
+func RunGame(state *models.GameState, gameaudio *models.GameAudio) *GameLoop {
 	initialize(state)
 	state.Score = 0
 
 	gameLoop := PrepareGameLoop(func(delta int64, gl *GameLoop) {
+		if !gameaudio.Theme.IsPlaying() {
+			gameaudio.Theme.Play()
+		}
+
 		if !state.GameRunning {
 			return
 		}
 
-		processKeyboardActions(state, delta)
+		processKeyboardActions(state, gameaudio, delta)
 
 		if state.Countdown != 0 {
 			if time.Now().Unix()-state.CountdownTs >= 1 {
@@ -295,8 +325,9 @@ func RunGame(state *models.GameState) *GameLoop {
 
 		moveTerrain(state, delta)
 
-		updateFuel(state, delta)
+		updateFuel(state, gameaudio, delta)
 	}, func() {
+		gameaudio.Theme.Close()
 	})
 
 	go StartGameLoop(gameLoop)

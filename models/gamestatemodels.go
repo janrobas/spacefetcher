@@ -1,5 +1,10 @@
 package models
 
+import (
+	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/audio"
+)
+
 type GameState struct {
 	MoveXOffset       float32
 	MoveYOffset       float32
@@ -18,6 +23,21 @@ type GameState struct {
 	Maps              []GameMap
 	GameRunning       bool
 	Score             int
+}
+
+type GameImages struct {
+	EmptyImage  *ebiten.Image
+	HexRoad     *ebiten.Image
+	HexRoadFast *ebiten.Image
+	HexSpace    *ebiten.Image
+	HexDanger   *ebiten.Image
+	HexFuel     *ebiten.Image
+}
+
+type GameAudio struct {
+	Theme *audio.Player
+	Pick  *audio.Player
+	Muted bool
 }
 
 type GameMap struct {

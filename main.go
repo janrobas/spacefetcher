@@ -3,12 +3,15 @@ package main
 import (
 	"image/color"
 	"janrobas/spacefetcher/constants"
+	"janrobas/spacefetcher/gameaudio"
 	"janrobas/spacefetcher/logic"
 	"janrobas/spacefetcher/models"
 	"log"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/audio"
+	"github.com/hajimehoshi/ebiten/audio/vorbis"
 )
 
 func update(screen *ebiten.Image, menuState *models.MenuState, gameState *models.GameState, gameImages *models.GameImages) error {
@@ -82,6 +85,27 @@ func getGameImages() *models.GameImages {
 	return gameImages
 }
 
+func getGameAudio() *models.GameAudio {
+	const sampleRate = 44100
+
+	audioContext, err := audio.NewContext(sampleRate)
+	if err != nil {
+		panic(err)
+	}
+
+	oggTheme, _ := vorbis.Decode(audioContext, audio.BytesReadSeekCloser(gameaudio.Theme))
+	oggPick, _ := vorbis.Decode(audioContext, audio.BytesReadSeekCloser(gameaudio.Pick))
+
+	themeLoop := audio.NewInfiniteLoop(oggTheme, (60+16.5)*4*sampleRate)
+	themeAudioPlayer, _ := audio.NewPlayer(audioContext, themeLoop)
+	pickAudioPlayer, _ := audio.NewPlayer(audioContext, oggPick)
+
+	return &models.GameAudio{
+		Theme: themeAudioPlayer,
+		Pick:  pickAudioPlayer,
+	}
+}
+
 func main() {
 	lev1 := stringToGameMap("000000000\n001111100\n00S000000\n001111100\n001X00000\n001111100", "First Step")
 	lev2 := stringToGameMap("0000X0000\n001111100\n00S000000\n001111100\n001X00X00\n002222200", "Giant Leap")
@@ -96,16 +120,19 @@ func main() {
 	lev11 := stringToGameMap("00S100000000000000\n000111100000000000\n000022000000000000\n000022000000000000\n000022X00000000000\n000022001110111000\n00002200101X101000\n000X22001010101000\n000022111011101000\n00002200000000X000\n000022222222222000\n000022000000000000\n000022000000000000\n", "Cooling System")
 	lev12 := stringToGameMap("00S022200000000000\n002000200000000000\n002222222220X00000\n000002000001000000\n000002X00001000000\n000001111111000000\n00000X000000000000\n000002222222000000\n000002222222000000\n00000000000X000000\n", "Escape from Space")
 
-	gameState := &models.GameState{}
 	menuState := &models.MenuState{}
 	gameImages := getGameImages()
-	gameState.Maps = []models.GameMap{lev1, lev2, lev3, lev4, lev5, lev6, lev7, lev8, lev9, lev10, lev11, lev12}
+	gameAudio := getGameAudio()
+
+	gameState := &models.GameState{
+		Maps: []models.GameMap{lev1, lev2, lev3, lev4, lev5, lev6, lev7, lev8, lev9, lev10, lev11, lev12},
+	}
 
 	gs := logic.RunMenu(menuState)
 
 	go func() {
 		<-gs.Stop
-		logic.RunGame(gameState)
+		logic.RunGame(gameState, gameAudio)
 	}()
 
 	screenProxy, _ := ebiten.NewImage(constants.ScreenWidth, constants.ScreenHeight, ebiten.FilterLinear)
