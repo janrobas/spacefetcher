@@ -212,8 +212,8 @@ func processKeyboardActions(state *models.GameState, gameaudio *models.GameAudio
 		tMuteChange := time.NewTimer(time.Millisecond * 500)
 
 		if gameaudio.Muted {
-			gameaudio.Theme.SetVolume(1)
-			gameaudio.Pick.SetVolume(1)
+			gameaudio.Theme.SetVolume(constants.MusicVolume)
+			gameaudio.Pick.SetVolume(constants.FxVolume)
 
 			go func() {
 				<-tMuteChange.C
@@ -295,6 +295,9 @@ func updateFuel(state *models.GameState, gameaudio *models.GameAudio, delta int6
 func RunGame(state *models.GameState, gameaudio *models.GameAudio) *GameLoop {
 	initialize(state)
 	state.Score = 0
+
+	gameaudio.Pick.SetVolume(constants.FxVolume)
+	gameaudio.Theme.SetVolume(constants.MusicVolume)
 
 	gameLoop := PrepareGameLoop(func(delta int64, gl *GameLoop) {
 		if !gameaudio.Theme.IsPlaying() {

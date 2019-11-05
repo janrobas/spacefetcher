@@ -96,7 +96,7 @@ func getGameAudio() *models.GameAudio {
 	oggTheme, _ := vorbis.Decode(audioContext, audio.BytesReadSeekCloser(gameaudio.Theme))
 	oggPick, _ := vorbis.Decode(audioContext, audio.BytesReadSeekCloser(gameaudio.Pick))
 
-	themeLoop := audio.NewInfiniteLoop(oggTheme, (60+16.5)*4*sampleRate)
+	themeLoop := audio.NewInfiniteLoop(oggTheme, (60+16.45)*4*sampleRate)
 	themeAudioPlayer, _ := audio.NewPlayer(audioContext, themeLoop)
 	pickAudioPlayer, _ := audio.NewPlayer(audioContext, oggPick)
 
