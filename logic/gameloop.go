@@ -19,14 +19,14 @@ func PrepareGameLoop(onUpdate func(int64, *GameLoop), onStop func()) *GameLoop {
 }
 
 func StartGameLoop(gameLoop *GameLoop) {
-	ticker := time.NewTicker(22 * time.Millisecond)
+	ticker := time.NewTicker(23 * time.Millisecond)
 
 	tsStart := time.Now().UnixNano() / 1000000
 
 	for {
 		select {
 		case <-ticker.C:
-			delta := int64(time.Now().UnixNano()/1000000 - tsStart)
+			delta := time.Now().UnixNano()/1000000 - tsStart
 			tsStart = time.Now().UnixNano() / 1000000
 			gameLoop.onUpdate(delta, gameLoop)
 		case <-gameLoop.Stop:

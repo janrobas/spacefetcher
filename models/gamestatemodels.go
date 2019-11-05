@@ -14,7 +14,7 @@ type GameState struct {
 	ShipY             float32
 	CurrentMap        GameMap
 	CurrentCollisions []IntCoordinates
-	Fuel              float32
+	Fuel              float64
 	ShipRotation      float32
 	Countdown         int
 	CountdownTs       int64
@@ -26,12 +26,7 @@ type GameState struct {
 }
 
 type GameImages struct {
-	EmptyImage  *ebiten.Image
-	HexRoad     *ebiten.Image
-	HexRoadFast *ebiten.Image
-	HexSpace    *ebiten.Image
-	HexDanger   *ebiten.Image
-	HexFuel     *ebiten.Image
+	EmptyImage *ebiten.Image
 }
 
 type GameAudio struct {

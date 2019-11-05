@@ -2,7 +2,9 @@ package logic
 
 import (
 	"fmt"
+	"image/color"
 	"math"
+	"strings"
 	"time"
 
 	"janrobas/spacefetcher/constants"
@@ -61,33 +63,36 @@ func shipIsClose(state *models.GameState, x float32, y float32, dist float64) bo
 		math.Abs(float64(y)-float64(state.ShipY)) < dist/1.5
 }
 
-func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, w float32, h float32, x float32, y float32, logicalX int, logicalY int, images *models.GameImages) bool {
+func drawHexAndReturnIfCollision(screen *ebiten.Image, state *models.GameState, w float32, h float32, x float32, y float32, logicalX int, logicalY int, imgs *models.GameImages) bool {
 	isOnMap := logicalX >= 0 && logicalY >= 0 &&
 		len(state.CurrentMap.Map) > logicalX &&
 		len(state.CurrentMap.Map[logicalX]) > logicalY
 
-	var img *ebiten.Image
+	var color *color.RGBA
 
 	shipIsOnThisHex := shipIsClose(state, x, y, constants.HexSize)
 
 	if isOnMap && state.CurrentMap.Map[logicalX][logicalY] == 'X' {
-		img = images.HexFuel
+		color = constants.HexFuelColor
 	} else if isOnMap && (state.CurrentMap.Map[logicalX][logicalY] == '1' || state.CurrentMap.Map[logicalX][logicalY] == 'S') {
-		img = images.HexRoad
+		color = constants.HexRoadColor
 	} else if isOnMap && state.CurrentMap.Map[logicalX][logicalY] == '2' {
-		img = images.HexRoadFast
+		color = constants.HexRoadFastColor
 	} else if shipIsOnThisHex {
-		img = images.HexDanger
+		color = constants.HexDangerColor
 	} else {
-		img = images.HexSpace
+		color = constants.HexSpaceColor
+
+		/*if (logicalX+logicalY)%2 == 0 {
+			color = constants.HexDangerColor
+		}*/
 	}
 
-	graphics.DrawHex(screen, w, h, x, y, img)
-
+	graphics.DrawHex(screen, w, h, x, y, imgs.EmptyImage, color)
 	return shipIsOnThisHex && isOnMap
 }
 
-func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.GameImages) error {
+func UpdateGame(screen *ebiten.Image, state *models.GameState, imgs *models.GameImages) error {
 	if ebiten.IsDrawingSkipped() || !state.GameRunning {
 		return nil
 	}
@@ -107,7 +112,7 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 			isCollision := drawHexAndReturnIfCollision(screen, state, constants.HexSize, constants.HexSize,
 				float32(+offset+i*(constants.HexSize+constants.HexMarginLeft))+state.MoveXOffset,
 				float32(-(2*constants.HexSize)+j*(constants.HexSize+constants.HexMarginTop))+state.MoveYOffset,
-				logicalX, logicalY, images)
+				logicalX, logicalY, imgs)
 
 			if isCollision {
 				currentCollisions = append(currentCollisions, models.IntCoordinates{X: logicalX, Y: logicalY})
@@ -130,7 +135,7 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2+70,
-			fmt.Sprintf("Your final score: %d", state.Score+int(math.Ceil(float64(state.Fuel)))))
+			fmt.Sprintf("Your final score: %d", state.Score+int(math.Ceil(state.Fuel))))
 
 		graphics.DisplayMessage(screen, 20,
 			constants.ScreenHeight/2+110,
@@ -139,8 +144,8 @@ func UpdateGame(screen *ebiten.Image, state *models.GameState, images *models.Ga
 		return nil
 	}
 
-	graphics.DrawShip(screen, 40, 50, state.ShipX, state.ShipY, state.ShipRotation, images.EmptyImage)
-	graphics.DrawFuel(screen, float64(state.Fuel))
+	graphics.DrawShip(screen, 40, 50, state.ShipX, state.ShipY, state.ShipRotation, imgs.EmptyImage, constants.ShipColor)
+	graphics.DrawFuel(screen, state.Fuel)
 
 	graphics.DisplayMessage(screen, 20, 22, fmt.Sprintf("Stage: %s", state.CurrentMap.Name))
 
@@ -236,13 +241,13 @@ func processKeyboardActions(state *models.GameState, gameaudio *models.GameAudio
 }
 
 func moveTerrain(state *models.GameState, delta int64) {
-	terrainSpeedMultiply := float32(1)
+	var terrainSpeedMultiply float32 = 1
 
 	if ebiten.IsKeyPressed(ebiten.KeyUp) {
 		for _, collision := range state.CurrentCollisions {
 			collisionChar := state.CurrentMap.Map[collision.X][collision.Y]
 			if collisionChar == '2' {
-				terrainSpeedMultiply = float32(2)
+				terrainSpeedMultiply = 2
 				break
 			}
 		}
@@ -271,7 +276,7 @@ func moveTerrain(state *models.GameState, delta int64) {
 
 func updateFuel(state *models.GameState, gameaudio *models.GameAudio, delta int64) {
 	if len(state.CurrentCollisions) == 0 {
-		state.Fuel -= float32(delta) / 166
+		state.Fuel -= float64(delta) / 166
 	}
 
 	for _, collision := range state.CurrentCollisions {
@@ -289,7 +294,7 @@ func updateFuel(state *models.GameState, gameaudio *models.GameAudio, delta int6
 		}
 	}
 
-	state.Fuel -= float32(delta) / 1444
+	state.Fuel -= float64(delta) / 1444
 }
 
 func RunGame(state *models.GameState, gameaudio *models.GameAudio) *GameLoop {
@@ -336,4 +341,40 @@ func RunGame(state *models.GameState, gameaudio *models.GameAudio) *GameLoop {
 	go StartGameLoop(gameLoop)
 
 	return gameLoop
+}
+
+func StringToGameMap(minimized string, name string) models.GameMap {
+	result := make([][]rune, 0, 0)
+
+	for _, row := range strings.Split(minimized, "\n") {
+
+		rowRes := make([][]rune, 4)
+
+		for n := 0; n < 4; n++ {
+			rowRes[n] = make([]rune, len(row)*4)
+			for i, char := range row {
+				if char == 'X' {
+					if n%4 != 2 {
+						char = '0'
+					}
+
+					rowRes[n][4*i] = '0'
+					rowRes[n][4*i+1] = '0'
+					rowRes[n][4*i+2] = char
+					rowRes[n][4*i+3] = '0'
+				} else {
+					rowRes[n][4*i] = char
+					rowRes[n][4*i+1] = char
+					rowRes[n][4*i+2] = char
+					rowRes[n][4*i+3] = char
+				}
+
+			}
+		}
+
+		result = append(result, rowRes...)
+
+	}
+
+	return models.GameMap{Map: result, Name: name}
 }
